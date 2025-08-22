@@ -1,41 +1,26 @@
 # ---------- Build stage ----------
-FROM icr.io/appcafe/ibm-semeru-runtimes:open-8-jdk-focal AS build-stage
+FROM maven:3.9.6-eclipse-temurin-8 AS build
+WORKDIR /app
 
-RUN apt-get update && \
-    apt-get install -y maven unzip && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
-
-WORKDIR /project
-COPY ./pom.xml /project/
-COPY ./src /project/src/
-
-RUN mvn clean package -DskipTests && \
-    mkdir -p /config/apps /sharedlibs && \
-    cp ./src/main/liberty/config/* /config/ && \
-    cp ./target/*.*ar /config/apps/ && \
-    if [ -d "./src/main/liberty/lib" ] && [ "$(ls -A ./src/main/liberty/lib)" ]; then \
-      cp -r ./src/main/liberty/lib/* /sharedlibs/; \
-    fi
+# copy code và build
+COPY pom.xml .
+COPY src ./src
+RUN mvn -B -DskipTests package
 
 # ---------- Runtime stage ----------
-FROM icr.io/appcafe/websphere-liberty:kernel-java8-openj9-ubi
+FROM tomcat:9.0-jdk8-temurin
 
-USER root
-RUN microdnf install -y curl && microdnf clean all && \
-    mkdir -p /opt/ibm/wlp/usr/shared/config/lib/global
+# (tuỳ chọn) có curl cho healthcheck
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
-COPY --from=build-stage /config/ /config/
-COPY --from=build-stage /sharedlibs/ /opt/ibm/wlp/usr/shared/config/lib/global/
+# dọn default apps
+RUN rm -rf /usr/local/tomcat/webapps/*
 
-# Liberty setup
-RUN features.sh && configure.sh
+# copy war ra ROOT.war để truy cập tại "/"
+COPY --from=build /app/target/*.war /usr/local/tomcat/webapps/ROOT.war
 
-# Không chạy as root
-USER 1001
-
+EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-  CMD curl -fsS http://localhost:9080/health || exit 1
+  CMD curl -fsS http://localhost:8080/ || exit 1
 
-EXPOSE 9080 9443
-ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:+UseG1GC"
-CMD ["/opt/ibm/wlp/bin/server","run","defaultServer"]
+CMD ["catalina.sh", "run"]
