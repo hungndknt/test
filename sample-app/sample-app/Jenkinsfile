@@ -4,6 +4,7 @@ pipeline {
     
     environment {
         PROJECT_NAME = "sample-app"
+        PROJECT_DIR = "sample-app"
         DOCKER_REGISTRY = "192.168.137.128:18080"
         IMAGE_PREFIX = "ci"
         DOCKERFILE = "Dockerfile"
