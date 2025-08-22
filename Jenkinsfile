@@ -56,9 +56,9 @@ node {
     stage('Deploy to K8s') {
       sh """#!/bin/bash -e
         echo "Deploying ${imageBuild} to ${namespace}/${k8sProjectName}"
-        kubectl ${kubeconfig} -n ${namespace} get deploy ${k8sProjectName} -o name
-        kubectl  ${kubeconfig} -n ${namespace} set image deployment/${k8sProjectName} ${k8sProjectName}=${imageBuild}
-        kubectl  ${kubeconfig} -n ${namespace} rollout status deployment/${k8sProjectName}
+        kubectl  -n ${namespace} get deploy ${k8sProjectName} -o name
+        kubectl -n ${namespace} set image deployment/${k8sProjectName} ${k8sProjectName}=${imageBuild}
+        kubectl  -n ${namespace} rollout status deployment/${k8sProjectName}
       """
     }
 
