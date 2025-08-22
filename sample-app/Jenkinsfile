@@ -23,7 +23,7 @@ pipeline {
         stage('Build Image') {
             steps {
                 script {
-                    sh "docker build -t ${IMAGE_TAG} -f ${DOCKERFILE} ."
+                    sh "docker build -t ${IMAGE_TAG} -f sample-app/Dockerfile sample-app"
                 }
             }
         }
@@ -60,3 +60,4 @@ pipeline {
         }
     }
 }
+
