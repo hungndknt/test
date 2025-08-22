@@ -4,7 +4,7 @@ node {
 
   try {
     // ===== Vars =====
-    def project        = "sample-app-deployment"
+    def project        = "sample-app"
     def dockerRepo     = "192.168.137.128:18080"
     def imagePrefix    = "ci"
     def dockerFile     = "Dockerfile"
@@ -13,7 +13,7 @@ node {
     def branchName     = env.BRANCH_NAME ?: "main"
 
     // K8s
-    def k8sProjectName = "sample-app-deployment"      
+    def k8sProjectName = "sample-app"      
     def namespace      = "default"
     def kubeconfig     = "/root/.kube/config"
 
