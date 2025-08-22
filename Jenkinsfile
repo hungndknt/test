@@ -1,49 +1,52 @@
 #!/usr/bin/env groovy
-pipeline {
-  agent any
 
-  environment {
-    PROJECT_NAME   = "sample-app"
-    DOCKER_REGISTRY= "192.168.137.128:18080"
-    IMAGE_PREFIX   = "ci"
-    IMAGE_NAME     = "${DOCKER_REGISTRY}/${IMAGE_PREFIX}/${PROJECT_NAME}"
-    IMAGE_TAG      = "${IMAGE_NAME}:${env.BUILD_NUMBER}"
-    DOCKERFILE_PATH= "Dockerfile"
-    BUILD_CONTEXT  = "." 
-  }
+node {
+  properties([disableConcurrentBuilds()])
 
-  stages {
-    stage('Checkout') {
-      steps { cleanWs(); checkout scm }
+  try {
+    // ====== Vars ======
+    dockerRepo     = "192.168.137.128:18080" 
+    imagePrefix    = "ci"
+    dockerFile     = "Dockerfile"  
+    imageName      = "${dockerRepo}/${imagePrefix}/${project}"
+    buildNumber    = "${env.BUILD_NUMBER}"
+
+    // ====== Stages ======
+    stage('Workspace Clearing') {
+      cleanWs()
     }
 
-    stage('Build Image') {
-      steps {
-        sh """
-          docker build -t ${IMAGE_TAG} -f ${DOCKERFILE_PATH} ${BUILD_CONTEXT}
-        """
-      }
+    stage('Checkout code') {
+      checkout scm
+      sh "git checkout ${env.BRANCH_NAME} && git reset --hard origin/${env.BRANCH_NAME}"
     }
 
-    stage('Push Image') {
-      steps {
-        sh "docker push ${IMAGE_TAG}"
-      }
+    stage('Build binary file') {
+      // Bỏ test cho nhanh lab; muốn chạy test thì bỏ -DskipTests
+      sh "mvn -U -B -DskipTests clean package"
     }
 
-    stage('Deploy') {
-      steps {
-        sh """
-          kubectl -n default set image deployment/${PROJECT_NAME} ${PROJECT_NAME}=${IMAGE_TAG}
-          kubectl -n default rollout status deployment/${PROJECT_NAME}
-        """
-      }
+    stage('Build image') {
+      sh """
+        egrep -q '^FROM .* AS builder\$' ${dockerFile} \
+          && docker build -t ${imageName}-stage-builder --target builder -f ${dockerFile} .
+        docker build -t ${imageName}:${env.BRANCH_NAME} -f ${dockerFile} .
+      """
     }
-  }
 
-  post {
-    always  { sh "docker rmi ${IMAGE_TAG} || true" }
-    failure { echo 'Build failed!' }
-    success { echo 'Build successful!' }
+    stage('Push image') {
+      sh """
+        docker push ${imageName}:${env.BRANCH_NAME}
+        docker tag  ${imageName}:${env.BRANCH_NAME} ${imageName}:${env.BRANCH_NAME}-build-${buildNumber}
+        docker push ${imageName}:${env.BRANCH_NAME}-build-${buildNumber}
+      """
+    }
+
+    imageBuild = "${imageName}:${env.BRANCH_NAME}-build-${buildNumber}"
+    echo "Pushed image: ${imageBuild}"
+
+  } catch (e) {
+    currentBuild.result = "FAILED"
+    throw e
   }
 }
