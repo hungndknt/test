@@ -4,47 +4,56 @@ node {
   properties([disableConcurrentBuilds()])
 
   try {
-    // ====== Vars ======
+    // ===== Vars =====
     def project     = "sample-app"
     def dockerRepo  = "192.168.137.128:18080"
     def imagePrefix = "ci"
     def dockerFile  = "Dockerfile"
     def imageName   = "${dockerRepo}/${imagePrefix}/${project}"
     def buildNumber = env.BUILD_NUMBER
-    def branchName  = env.BRANCH_NAME ?: "main"
+    def branchName  = env.BRANCH_NAME   // có thể null nếu không chạy multibranch
 
-    // ====== Stages ======
     stage('Workspace Clearing') {
       cleanWs()
     }
 
     stage('Checkout code') {
       checkout scm
-      sh "git checkout ${env.BRANCH_NAME} && git reset --hard origin/${env.BRANCH_NAME}"
+      // Chỉ checkout/reset khi có BRANCH_NAME
+      if (branchName) {
+        sh """
+          git fetch --all --prune
+          git checkout -B ${branchName} origin/${branchName}
+          git reset --hard origin/${branchName}
+        """
+      } else {
+        echo "No BRANCH_NAME detected; using current checked-out commit."
+      }
     }
 
     stage('Build binary file') {
-      // Bỏ test cho nhanh lab; muốn chạy test thì bỏ -DskipTests
       sh "mvn -U -B -DskipTests clean package"
     }
 
     stage('Build image') {
-      sh """
-        egrep -q '^FROM .* AS builder\$' ${dockerFile} \
-          && docker build -t ${imageName}-stage-builder --target builder -f ${dockerFile} .
-        docker build -t ${imageName}:${env.BRANCH_NAME} -f ${dockerFile} .
+      sh """#!/bin/bash -e
+        if egrep -q '^FROM .* AS (builder|build-stage)\$' ${dockerFile}; then
+          docker build -t ${imageName}-stage-builder --target builder -f ${dockerFile} .
+        fi
+        docker build -t ${imageName}:${branchName ?: 'manual'} -f ${dockerFile} .
       """
     }
 
     stage('Push image') {
+      def tagBase = (branchName ?: 'manual')
       sh """
-        docker push ${imageName}:${env.BRANCH_NAME}
-        docker tag  ${imageName}:${env.BRANCH_NAME} ${imageName}:${env.BRANCH_NAME}-build-${buildNumber}
-        docker push ${imageName}:${env.BRANCH_NAME}-build-${buildNumber}
+        docker push ${imageName}:${tagBase}
+        docker tag  ${imageName}:${tagBase} ${imageName}:${tagBase}-build-${buildNumber}
+        docker push ${imageName}:${tagBase}-build-${buildNumber}
       """
     }
 
-    imageBuild = "${imageName}:${env.BRANCH_NAME}-build-${buildNumber}"
+    def imageBuild = "${imageName}:${(branchName ?: 'manual')}-build-${buildNumber}"
     echo "Pushed image: ${imageBuild}"
 
   } catch (e) {
