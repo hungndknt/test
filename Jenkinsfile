@@ -4,6 +4,7 @@ pipeline {
     
     environment {
         PROJECT_NAME = "sample-app"
+        PROJECT_DIR = "sample-app/sample-app"
         DOCKER_REGISTRY = "192.168.137.128:18080"
         IMAGE_PREFIX = "ci"
         DOCKERFILE = "Dockerfile"
@@ -23,7 +24,7 @@ pipeline {
         stage('Build Image') {
             steps {
                 script {
-                    sh "docker build -t ${IMAGE_TAG} -f sample-app/Dockerfile sample-app"
+                    sh "docker build -t ${IMAGE_TAG} -f sample-app/sample-app/Dockerfile sample-app"
                 }
             }
         }
