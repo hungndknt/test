@@ -15,7 +15,6 @@ node {
     // K8s
     def k8sProjectName = "sample-app"      
     def namespace      = "default"
-    def kubeconfig     = "/root/.kube/config"
 
   // Maven tool
     def mvnHome = tool 'apache-maven-3.9.11'
