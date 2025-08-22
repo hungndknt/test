@@ -2,7 +2,7 @@
 <html lang="en">
 
 <head>
-    <title>Portfolio Website-Viet</title>
+    <title>Portfolio Website-Hung</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <!-- linking css file -->
@@ -18,7 +18,7 @@
     <!-- navbar -->
     <nav class="navbar navbar-expand-lg fixed-top navbar-dark navbarScroll">
         <div class="container">
-            <a class="navbar-brand" href="#">Viet</a>
+            <a class="navbar-brand" href="#">Hung</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
                 data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false"
                 aria-label="Toggle navigation">
@@ -50,8 +50,8 @@
         <div class="container-fluid">
             <div class="row">
                 <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 hero-text">
-                    <h2 class="hero_title">Hi, I'm Viet</h2>
-                    <p class="hero_desc">I am a DevOps Engineer at Antoree</p>
+                    <h2 class="hero_title">Hi, I'm Hung</h2>
+                    <p class="hero_desc">I am a DevOps Engineer at NAB</p>
                 </div>
             </div>
         </div>
@@ -62,9 +62,6 @@
         <div class="container mt-4 pt-4">
             <h1 class="text-center">About Me</h1>
             <div class="row mt-4">
-                <div class="col-lg-4">
-                    <img src="images/about.png" class="imageAboutPage" alt="">
-                </div>
 
                 <div class="col-lg-8">
                     <p> Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown
@@ -73,24 +70,7 @@
                         unchanged
 
                     </p>
-                    <div class="row mt-3">
-                        <div class="col-md-6">
-                            <ul>
-                                <li>Name: Mai Hoang Viet</li>
-                                <li>Age: 22</li>
-                                <li>Occupation: DevOps Engineer</li>
 
-                            </ul>
-                        </div>
-                        <div class="col-md-6">
-                            <ul>
-                                <li>Name: Mai Hoang Viet</li>
-                                <li>Age: 22</li>
-                                <li>Occupation: DevOps Engineer</li>
-
-                            </ul>
-                        </div>
-                    </div>
                     <div class="row mt-3">
                         <p> Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an
                             unknown printer took a galley of type and scrambled it to make a type specimen book. It has
