@@ -9,8 +9,8 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Copy only necessary files first (better layer caching)
-COPY pom.xml /project/
-COPY src /project/src/
+COPY ./pom.xml /project/
+COPY ./src /project/src/
 WORKDIR /project
 
 # Build application
