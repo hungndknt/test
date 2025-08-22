@@ -4,18 +4,21 @@ node {
 
   try {
     // ===== Vars =====
-    def project     = "sample-app"
-    def dockerRepo  = "192.168.137.128:18080"
-    def imagePrefix = "ci"
-    def dockerFile  = "Dockerfile"
-    def imageName   = "${dockerRepo}/${imagePrefix}/${project}"
-    def buildNumber = env.BUILD_NUMBER
-    def branchName  = env.BRANCH_NAME ?: "main"
+    def project        = "sample-app"
+    def dockerRepo     = "192.168.137.128:18080"
+    def imagePrefix    = "ci"
+    def dockerFile     = "Dockerfile"
+    def imageName      = "${dockerRepo}/${imagePrefix}/${project}"
+    def buildNumber    = env.BUILD_NUMBER
+    def branchName     = env.BRANCH_NAME ?: "main"
 
-    // LẤY MAVEN TỪ 'Manage Jenkins > Tools'
-    def mvnHome = tool 'apache-maven-3.9.11'   // <-- đúng tên bạn đã cấu hình
-    // (tuỳ chọn) nếu JDK cũng là tool
-    // def jdkHome = tool 'jdk17'; withEnv(["JAVA_HOME=${jdkHome}", "PATH+JAVA=${jdkHome}/bin"])
+    // K8s
+    def k8sProjectName = "sample-app"                 // tên container trong Deployment
+    def namespace      = "default"
+    def kubeconfig     = "/root/.kube/config"
+
+  // Maven tool
+    def mvnHome = tool 'apache-maven-3.9.11'
 
     stage('Workspace Clearing') { cleanWs() }
 
@@ -23,6 +26,8 @@ node {
       checkout scm
       if (env.BRANCH_NAME) {
         sh "git fetch --all --prune && git checkout -B ${branchName} origin/${branchName} && git reset --hard origin/${branchName}"
+      } else {
+        echo "No BRANCH_NAME; using currently checked out commit."
       }
     }
 
@@ -45,16 +50,18 @@ node {
       """
     }
 
-    echo "Pushed: ${imageName}:${branchName}-build-${buildNumber}"
-    stage('Deploy to K8s') {
-    sh """#!/bin/bash -e
-    echo "Deploying ${imageBuild} to ${namespace}/${k8sProjectName}"
-    kubectl --kubeconfig ${kubeconfig} -n ${namespace} get deploy ${k8sProjectName} -o name
-    kubectl --kubeconfig ${kubeconfig} -n ${namespace} \
-      set image deployment/${k8sProjectName} ${k8sProjectName}=${imageBuild}
+    def imageBuild = "${imageName}:${branchName}-build-${buildNumber}"
+    echo "Pushed: ${imageBuild}"
 
-    kubectl --kubeconfig ${kubeconfig} -n ${namespace} \
-      rollout status deployment/${k8sProjectName}
+    stage('Deploy to K8s') {
+      sh """#!/bin/bash -e
+        echo "Deploying ${imageBuild} to ${namespace}/${k8sProjectName}"
+        kubectl --kubeconfig ${kubeconfig} -n ${namespace} get deploy ${k8sProjectName} -o name
+        kubectl --kubeconfig ${kubeconfig} -n ${namespace} set image deployment/${k8sProjectName} ${k8sProjectName}=${imageBuild}
+        kubectl --kubeconfig ${kubeconfig} -n ${namespace} rollout status deployment/${k8sProjectName}
+      """
+    }
+
   } catch (e) {
     currentBuild.result = "FAILED"
     throw e
