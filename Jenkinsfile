@@ -13,7 +13,7 @@ node {
     def branchName     = env.BRANCH_NAME ?: "main"
 
     // K8s
-    def k8sProjectName = "sample-app"                 // tên container trong Deployment
+    def k8sProjectName = "sample-app-deployment"      
     def namespace      = "default"
     def kubeconfig     = "/root/.kube/config"
 
