@@ -4,7 +4,7 @@ node {
 
   try {
     // ===== Vars =====
-    def project        = "sample-app"
+    def project        = "sample-app-deployment"
     def dockerRepo     = "192.168.137.128:18080"
     def imagePrefix    = "ci"
     def dockerFile     = "Dockerfile"
