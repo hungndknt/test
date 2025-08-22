@@ -1,5 +1,4 @@
 #!/usr/bin/env groovy
-
 node {
   properties([disableConcurrentBuilds()])
 
@@ -11,51 +10,42 @@ node {
     def dockerFile  = "Dockerfile"
     def imageName   = "${dockerRepo}/${imagePrefix}/${project}"
     def buildNumber = env.BUILD_NUMBER
-    def branchName  = env.BRANCH_NAME   // có thể null nếu không chạy multibranch
+    def branchName  = env.BRANCH_NAME ?: "main"
 
-    stage('Workspace Clearing') {
-      cleanWs()
-    }
+    // LẤY MAVEN TỪ 'Manage Jenkins > Tools'
+    def mvnHome = tool 'apache-maven-3.9.11'   // <-- đúng tên bạn đã cấu hình
+    // (tuỳ chọn) nếu JDK cũng là tool
+    // def jdkHome = tool 'jdk17'; withEnv(["JAVA_HOME=${jdkHome}", "PATH+JAVA=${jdkHome}/bin"])
+
+    stage('Workspace Clearing') { cleanWs() }
 
     stage('Checkout code') {
       checkout scm
-      // Chỉ checkout/reset khi có BRANCH_NAME
-      if (branchName) {
-        sh """
-          git fetch --all --prune
-          git checkout -B ${branchName} origin/${branchName}
-          git reset --hard origin/${branchName}
-        """
-      } else {
-        echo "No BRANCH_NAME detected; using current checked-out commit."
+      if (env.BRANCH_NAME) {
+        sh "git fetch --all --prune && git checkout -B ${branchName} origin/${branchName} && git reset --hard origin/${branchName}"
       }
     }
 
-    stage('Build binary file') {
-      sh "mvn -U -B -DskipTests clean package"
+    stage('Build (Maven)') {
+      withEnv(["PATH+MAVEN=${mvnHome}/bin"]) {
+        sh "mvn -v"
+        sh "mvn -U -B -DskipTests clean package"
+      }
     }
 
-    stage('Build image') {
-      sh """#!/bin/bash -e
-        if egrep -q '^FROM .* AS (builder|build-stage)\$' ${dockerFile}; then
-          docker build -t ${imageName}-stage-builder --target builder -f ${dockerFile} .
-        fi
-        docker build -t ${imageName}:${branchName ?: 'manual'} -f ${dockerFile} .
-      """
+    stage('Docker Build') {
+      sh "docker build -t ${imageName}:${branchName} -f ${dockerFile} ."
     }
 
-    stage('Push image') {
-      def tagBase = (branchName ?: 'manual')
+    stage('Push Image') {
       sh """
-        docker push ${imageName}:${tagBase}
-        docker tag  ${imageName}:${tagBase} ${imageName}:${tagBase}-build-${buildNumber}
-        docker push ${imageName}:${tagBase}-build-${buildNumber}
+        docker push ${imageName}:${branchName}
+        docker tag  ${imageName}:${branchName} ${imageName}:${branchName}-build-${buildNumber}
+        docker push ${imageName}:${branchName}-build-${buildNumber}
       """
     }
 
-    def imageBuild = "${imageName}:${(branchName ?: 'manual')}-build-${buildNumber}"
-    echo "Pushed image: ${imageBuild}"
-
+    echo "Pushed: ${imageName}:${branchName}-build-${buildNumber}"
   } catch (e) {
     currentBuild.result = "FAILED"
     throw e
