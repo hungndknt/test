@@ -46,6 +46,15 @@ node {
     }
 
     echo "Pushed: ${imageName}:${branchName}-build-${buildNumber}"
+    stage('Deploy to K8s') {
+    sh """#!/bin/bash -e
+    echo "Deploying ${imageBuild} to ${namespace}/${k8sProjectName}"
+    kubectl --kubeconfig ${kubeconfig} -n ${namespace} get deploy ${k8sProjectName} -o name
+    kubectl --kubeconfig ${kubeconfig} -n ${namespace} \
+      set image deployment/${k8sProjectName} ${k8sProjectName}=${imageBuild}
+
+    kubectl --kubeconfig ${kubeconfig} -n ${namespace} \
+      rollout status deployment/${k8sProjectName}
   } catch (e) {
     currentBuild.result = "FAILED"
     throw e
