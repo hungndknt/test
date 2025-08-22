@@ -5,11 +5,13 @@ node {
 
   try {
     // ====== Vars ======
-    dockerRepo     = "192.168.137.128:18080" 
-    imagePrefix    = "ci"
-    dockerFile     = "Dockerfile"  
-    imageName      = "${dockerRepo}/${imagePrefix}/${project}"
-    buildNumber    = "${env.BUILD_NUMBER}"
+    def project     = "sample-app"
+    def dockerRepo  = "192.168.137.128:18080"
+    def imagePrefix = "ci"
+    def dockerFile  = "Dockerfile"
+    def imageName   = "${dockerRepo}/${imagePrefix}/${project}"
+    def buildNumber = env.BUILD_NUMBER
+    def branchName  = env.BRANCH_NAME ?: "main"
 
     // ====== Stages ======
     stage('Workspace Clearing') {
