@@ -36,7 +36,13 @@ node {
         sh "mvn -U -B -DskipTests clean package"
       }
     }
-
+	stage('Add OTel agent to context') {
+	sh '''
+    mkdir -p otel
+    cp /opt/otel/opentelemetry-javaagent.jar otel/opentelemetry-javaagent.jar
+    ls -lh otel/
+	'''
+}
     stage('Docker Build') {
       sh "docker build -t ${imageName}:${branchName} -f ${dockerFile} ."
     }
