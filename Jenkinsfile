@@ -30,7 +30,13 @@ node {
         echo "No BRANCH_NAME; using currently checked out commit."
       }
     }
-
+	stage('Add OTel agent to context') {
+	sh '''
+    mkdir -p otel
+    cp /opt/otel/opentelemetry-javaagent.jar otel/opentelemetry-javaagent.jar
+    ls -lh otel/
+	'''
+}
     stage('Build (Maven)') {
       withEnv(["PATH+MAVEN=${mvnHome}/bin"]) {
         sh "mvn -v"
