@@ -8,10 +8,6 @@ FROM tomcat:9.0-jdk8-temurin
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
 RUN rm -rf /usr/local/tomcat/webapps/*
-<<<<<<< HEAD
-=======
-
->>>>>>> 296a3f966cf3404604e16f857dfe69ada88f8ce2
 COPY --from=build /app/target/*.war /usr/local/tomcat/webapps/ROOT.war
 
 EXPOSE 8080
